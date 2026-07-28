@@ -74,6 +74,11 @@ export default function AdminPage() {
     );
   }
 
+  const handleOpenAddProductForm = () => {
+    setActiveTab('products');
+    setShowAddForm(true);
+  };
+
   const handleCreateProductSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle || !newPrice || !newImage) return;
@@ -105,53 +110,57 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-luxury-black text-white flex flex-col">
-      {/* ROUTE TOP HEADER BAR */}
-      <header className="p-6 border-b border-neutral-800 bg-neutral-900/80 backdrop-blur-md sticky top-0 z-40">
-        <div className="w-full px-4 sm:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+      {/* ROUTE TOP HEADER BAR WITH PROMINENT ADD PRODUCT BUTTON */}
+      <header className="p-4 sm:p-6 border-b border-neutral-800 bg-neutral-900/80 backdrop-blur-md sticky top-0 z-40">
+        <div className="w-full px-2 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
             <button
               onClick={() => router.push('/')}
-              className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-full transition-colors flex items-center justify-center"
+              className="p-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 rounded-full transition-colors flex items-center justify-center shrink-0"
               title="Return to store"
             >
               <ArrowLeft className="w-4 h-4" />
             </button>
 
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-emerald-950 border border-emerald-800 rounded-full text-emerald-400">
+              <div className="p-2 bg-emerald-950 border border-emerald-800 rounded-full text-emerald-400 shrink-0">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[10px] tracking-[0.3em] uppercase font-sans text-neutral-400 block">
-                    ADMIN ROUTE PORTAL (/admin)
+                    ADMIN ROUTE (/admin)
                   </span>
                   <span className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">
                     {adminEmail}
                   </span>
                 </div>
-                <h1 className="text-xl font-editorial font-light uppercase tracking-wider text-white">
+                <h1 className="text-lg sm:text-xl font-editorial font-light uppercase tracking-wider text-white">
                   ATELIER Database & Admin Management
                 </h1>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-neutral-800 border border-neutral-700 text-xs font-sans">
-              <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-neutral-300">Admin Session: <strong>{user?.name}</strong></span>
-            </div>
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* PROMINENT ADD NEW PRODUCT BUTTON IN ROUTE HEADER BAR */}
+            <button
+              onClick={handleOpenAddProductForm}
+              className="px-4 py-2.5 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-lg shrink-0"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>+ Add Product</span>
+            </button>
 
             <button
               onClick={() => {
                 logoutUser();
                 router.push('/');
               }}
-              className="flex items-center gap-2 px-4 py-2 border border-neutral-700 text-xs tracking-wider uppercase font-sans hover:bg-rose-950 hover:border-rose-800 hover:text-rose-300 transition-all text-neutral-300"
+              className="flex items-center gap-1.5 px-3.5 py-2.5 border border-neutral-700 text-xs tracking-wider uppercase font-sans hover:bg-rose-950 hover:border-rose-800 hover:text-rose-300 transition-all text-neutral-300 shrink-0"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Log Out Admin</span>
+              <span className="hidden sm:inline">Log Out Admin</span>
             </button>
           </div>
         </div>
@@ -160,10 +169,10 @@ export default function AdminPage() {
       {/* DASHBOARD BODY */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* SIDEBAR NAVIGATION */}
-        <aside className="w-full md:w-64 border-r border-neutral-800 p-4 space-y-2 bg-neutral-900/30">
+        <aside className="w-full md:w-64 border-r border-neutral-800 p-3 sm:p-4 space-y-2 bg-neutral-900/30 flex md:flex-col overflow-x-auto md:overflow-x-visible shrink-0">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`w-full flex items-center gap-3 px-4 py-3 text-xs tracking-wider uppercase font-sans transition-all text-left ${
+            className={`flex-1 md:flex-none flex items-center gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
               activeTab === 'overview'
                 ? 'bg-white text-luxury-black font-semibold'
                 : 'text-neutral-400 hover:text-white hover:bg-white/5'
@@ -174,48 +183,14 @@ export default function AdminPage() {
           </button>
 
           <button
-            onClick={() => setActiveTab('customers')}
-            className={`w-full flex items-center justify-between px-4 py-3 text-xs tracking-wider uppercase font-sans transition-all text-left ${
-              activeTab === 'customers'
-                ? 'bg-white text-luxury-black font-semibold'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Users className="w-4 h-4" />
-              <span>Registered Customers</span>
-            </div>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
-              {dbUsers.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`w-full flex items-center justify-between px-4 py-3 text-xs tracking-wider uppercase font-sans transition-all text-left ${
-              activeTab === 'orders'
-                ? 'bg-white text-luxury-black font-semibold'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <ShoppingBag className="w-4 h-4" />
-              <span>Placed Orders</span>
-            </div>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
-              {adminOrders.length}
-            </span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('products')}
-            className={`w-full flex items-center justify-between px-4 py-3 text-xs tracking-wider uppercase font-sans transition-all text-left ${
+            className={`flex-1 md:flex-none flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
               activeTab === 'products'
                 ? 'bg-white text-luxury-black font-semibold'
                 : 'text-neutral-400 hover:text-white hover:bg-white/5'
             }`}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <Package className="w-4 h-4" />
               <span>Product Catalog</span>
             </div>
@@ -225,8 +200,42 @@ export default function AdminPage() {
           </button>
 
           <button
+            onClick={() => setActiveTab('customers')}
+            className={`flex-1 md:flex-none flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
+              activeTab === 'customers'
+                ? 'bg-white text-luxury-black font-semibold'
+                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <Users className="w-4 h-4" />
+              <span>Customers</span>
+            </div>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
+              {dbUsers.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`flex-1 md:flex-none flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
+              activeTab === 'orders'
+                ? 'bg-white text-luxury-black font-semibold'
+                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <div className="flex items-center gap-2.5">
+              <ShoppingBag className="w-4 h-4" />
+              <span>Placed Orders</span>
+            </div>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
+              {adminOrders.length}
+            </span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('settings')}
-            className={`w-full flex items-center gap-3 px-4 py-3 text-xs tracking-wider uppercase font-sans transition-all text-left ${
+            className={`flex-1 md:flex-none flex items-center gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
               activeTab === 'settings'
                 ? 'bg-white text-luxury-black font-semibold'
                 : 'text-neutral-400 hover:text-white hover:bg-white/5'
@@ -238,15 +247,26 @@ export default function AdminPage() {
         </aside>
 
         {/* TAB PANELS CONTENT */}
-        <main className="flex-1 p-6 md:p-10 space-y-8 overflow-y-auto max-h-[calc(100vh-80px)]">
+        <main className="flex-1 p-4 sm:p-6 md:p-10 space-y-8 overflow-y-auto max-h-[calc(100vh-80px)]">
           {/* OVERVIEW & METRICS */}
           {activeTab === 'overview' && (
-            <div className="space-y-8">
-              <div>
-                <h2 className="text-2xl font-editorial font-light text-white">Database Analytics & Store Metrics</h2>
-                <p className="text-xs font-sans text-neutral-400 font-light mt-1">
-                  Live synchronized metrics from persistent database tables.
-                </p>
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-neutral-900 border border-neutral-800">
+                <div>
+                  <h2 className="text-2xl font-editorial font-light text-white">Database Analytics & Store Metrics</h2>
+                  <p className="text-xs font-sans text-neutral-400 font-light mt-1">
+                    Live synchronized metrics from persistent database tables.
+                  </p>
+                </div>
+
+                {/* QUICK ADD PRODUCT CTA BANNER */}
+                <button
+                  onClick={handleOpenAddProductForm}
+                  className="px-5 py-3 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-md shrink-0"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>+ Add New Product</span>
+                </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -293,124 +313,10 @@ export default function AdminPage() {
             </div>
           )}
 
-          {/* REGISTERED CUSTOMERS LIST TABLE */}
-          {activeTab === 'customers' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-editorial font-light text-white">Registered Customers Database Table (`users`)</h2>
-                <p className="text-xs font-sans text-neutral-400 font-light mt-1">
-                  Viewing all registered customer accounts, email verification status, and role assignments.
-                </p>
-              </div>
-
-              <div className="bg-neutral-900 border border-neutral-800 overflow-x-auto">
-                <table className="w-full text-left text-xs font-sans">
-                  <thead className="border-b border-neutral-800 bg-neutral-950/80 text-[10px] uppercase tracking-widest text-neutral-400">
-                    <tr>
-                      <th className="p-4">User ID</th>
-                      <th className="p-4">Customer Name</th>
-                      <th className="p-4">Email Address</th>
-                      <th className="p-4">Verified Status</th>
-                      <th className="p-4">Joined Date</th>
-                      <th className="p-4 text-right">Role</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-800">
-                    {dbUsers.map((u) => (
-                      <tr key={u.id} className="hover:bg-neutral-800/50 transition-colors">
-                        <td className="p-4 font-mono text-neutral-400 text-[11px]">{u.id}</td>
-                        <td className="p-4 font-semibold text-white">{u.name}</td>
-                        <td className="p-4 font-mono text-neutral-300">{u.email}</td>
-                        <td className="p-4">
-                          <span className="inline-flex items-center gap-1 bg-emerald-950 text-emerald-400 border border-emerald-800 text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Verified ✓
-                          </span>
-                        </td>
-                        <td className="p-4 text-neutral-400">{u.joinedDate}</td>
-                        <td className="p-4 text-right">
-                          <span
-                            className={`px-2.5 py-1 text-[9px] uppercase font-mono tracking-wider ${
-                              u.role === 'admin'
-                                ? 'bg-purple-950 text-purple-300 border border-purple-800'
-                                : 'bg-neutral-800 text-neutral-300'
-                            }`}
-                          >
-                            {u.role}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* PLACED ORDERS MANAGEMENT TABLE */}
-          {activeTab === 'orders' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-editorial font-light text-white">Placed Customer Orders (`orders`)</h2>
-                <p className="text-xs font-sans text-neutral-400 font-light mt-1">
-                  Real-time customer orders, items breakdown, payment status, and fulfillment.
-                </p>
-              </div>
-
-              <div className="bg-neutral-900 border border-neutral-800 overflow-x-auto">
-                <table className="w-full text-left text-xs font-sans">
-                  <thead className="border-b border-neutral-800 bg-neutral-950/80 text-[10px] uppercase tracking-widest text-neutral-400">
-                    <tr>
-                      <th className="p-4">Order ID</th>
-                      <th className="p-4">Customer</th>
-                      <th className="p-4">Date</th>
-                      <th className="p-4">Items Count</th>
-                      <th className="p-4">Total Amount</th>
-                      <th className="p-4">Payment</th>
-                      <th className="p-4 text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-800">
-                    {adminOrders.map((ord) => (
-                      <tr key={ord.id} className="hover:bg-neutral-800/50 transition-colors">
-                        <td className="p-4 font-mono text-neutral-300 font-semibold">{ord.id}</td>
-                        <td className="p-4">
-                          <span className="font-semibold text-white block">{ord.customerName}</span>
-                          <span className="text-[10px] text-neutral-500 font-mono">{ord.email}</span>
-                        </td>
-                        <td className="p-4 text-neutral-400">{ord.date}</td>
-                        <td className="p-4 text-neutral-300">{ord.itemsCount} Items</td>
-                        <td className="p-4 font-semibold text-white">${ord.total}</td>
-                        <td className="p-4">
-                          <span className="text-emerald-400 font-mono text-[10px]">
-                            {ord.paymentStatus} ✓
-                          </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          <span
-                            className={`px-2.5 py-1 text-[9px] uppercase font-semibold tracking-wider ${
-                              ord.status === 'Delivered'
-                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                                : ord.status === 'Shipped'
-                                ? 'bg-blue-950 text-blue-400 border border-blue-800'
-                                : 'bg-amber-950 text-amber-400 border border-amber-800'
-                            }`}
-                          >
-                            {ord.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
           {/* PRODUCTS CATALOG MANAGEMENT */}
           {activeTab === 'products' && (
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-neutral-800">
                 <div>
                   <h2 className="text-2xl font-editorial font-light text-white">Products Catalog Management (`products`)</h2>
                   <p className="text-xs font-sans text-neutral-400 font-light mt-1">
@@ -418,12 +324,13 @@ export default function AdminPage() {
                   </p>
                 </div>
 
+                {/* PROMINENT ADD PRODUCT BUTTON ON PRODUCTS PAGE */}
                 <button
                   onClick={() => setShowAddForm(!showAddForm)}
-                  className="px-4 py-2.5 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-semibold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-md"
+                  className="px-5 py-3 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-lg shrink-0"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>{showAddForm ? 'Close Form' : 'Add New Product'}</span>
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>{showAddForm ? 'Close Add Form' : '+ Add New Product'}</span>
                 </button>
               </div>
 
@@ -433,7 +340,7 @@ export default function AdminPage() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   onSubmit={handleCreateProductSubmit}
-                  className="p-6 bg-neutral-900 border border-neutral-700 space-y-4 text-xs font-sans"
+                  className="p-6 bg-neutral-900 border border-neutral-700 space-y-4 text-xs font-sans shadow-2xl"
                 >
                   <h3 className="text-base font-editorial font-normal text-white uppercase tracking-wider">
                     Create New Product Entry
@@ -559,6 +466,120 @@ export default function AdminPage() {
                           >
                             Toggle Stock
                           </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* REGISTERED CUSTOMERS LIST TABLE */}
+          {activeTab === 'customers' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-editorial font-light text-white">Registered Customers Database Table (`users`)</h2>
+                <p className="text-xs font-sans text-neutral-400 font-light mt-1">
+                  Viewing all registered customer accounts, email verification status, and role assignments.
+                </p>
+              </div>
+
+              <div className="bg-neutral-900 border border-neutral-800 overflow-x-auto">
+                <table className="w-full text-left text-xs font-sans">
+                  <thead className="border-b border-neutral-800 bg-neutral-950/80 text-[10px] uppercase tracking-widest text-neutral-400">
+                    <tr>
+                      <th className="p-4">User ID</th>
+                      <th className="p-4">Customer Name</th>
+                      <th className="p-4">Email Address</th>
+                      <th className="p-4">Verified Status</th>
+                      <th className="p-4">Joined Date</th>
+                      <th className="p-4 text-right">Role</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800">
+                    {dbUsers.map((u) => (
+                      <tr key={u.id} className="hover:bg-neutral-800/50 transition-colors">
+                        <td className="p-4 font-mono text-neutral-400 text-[11px]">{u.id}</td>
+                        <td className="p-4 font-semibold text-white">{u.name}</td>
+                        <td className="p-4 font-mono text-neutral-300">{u.email}</td>
+                        <td className="p-4">
+                          <span className="inline-flex items-center gap-1 bg-emerald-950 text-emerald-400 border border-emerald-800 text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Verified ✓
+                          </span>
+                        </td>
+                        <td className="p-4 text-neutral-400">{u.joinedDate}</td>
+                        <td className="p-4 text-right">
+                          <span
+                            className={`px-2.5 py-1 text-[9px] uppercase font-mono tracking-wider ${
+                              u.role === 'admin'
+                                ? 'bg-purple-950 text-purple-300 border border-purple-800'
+                                : 'bg-neutral-800 text-neutral-300'
+                            }`}
+                          >
+                            {u.role}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* PLACED ORDERS MANAGEMENT TABLE */}
+          {activeTab === 'orders' && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-2xl font-editorial font-light text-white">Placed Customer Orders (`orders`)</h2>
+                <p className="text-xs font-sans text-neutral-400 font-light mt-1">
+                  Real-time customer orders, items breakdown, payment status, and fulfillment.
+                </p>
+              </div>
+
+              <div className="bg-neutral-900 border border-neutral-800 overflow-x-auto">
+                <table className="w-full text-left text-xs font-sans">
+                  <thead className="border-b border-neutral-800 bg-neutral-950/80 text-[10px] uppercase tracking-widest text-neutral-400">
+                    <tr>
+                      <th className="p-4">Order ID</th>
+                      <th className="p-4">Customer</th>
+                      <th className="p-4">Date</th>
+                      <th className="p-4">Items Count</th>
+                      <th className="p-4">Total Amount</th>
+                      <th className="p-4">Payment</th>
+                      <th className="p-4 text-right">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800">
+                    {adminOrders.map((ord) => (
+                      <tr key={ord.id} className="hover:bg-neutral-800/50 transition-colors">
+                        <td className="p-4 font-mono text-neutral-300 font-semibold">{ord.id}</td>
+                        <td className="p-4">
+                          <span className="font-semibold text-white block">{ord.customerName}</span>
+                          <span className="text-[10px] text-neutral-500 font-mono">{ord.email}</span>
+                        </td>
+                        <td className="p-4 text-neutral-400">{ord.date}</td>
+                        <td className="p-4 text-neutral-300">{ord.itemsCount} Items</td>
+                        <td className="p-4 font-semibold text-white">${ord.total}</td>
+                        <td className="p-4">
+                          <span className="text-emerald-400 font-mono text-[10px]">
+                            {ord.paymentStatus} ✓
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          <span
+                            className={`px-2.5 py-1 text-[9px] uppercase font-semibold tracking-wider ${
+                              ord.status === 'Delivered'
+                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                                : ord.status === 'Shipped'
+                                ? 'bg-blue-950 text-blue-400 border border-blue-800'
+                                : 'bg-amber-950 text-amber-400 border border-amber-800'
+                            }`}
+                          >
+                            {ord.status}
+                          </span>
                         </td>
                       </tr>
                     ))}
