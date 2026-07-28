@@ -16,7 +16,8 @@ import {
   ShieldCheck,
   CheckCircle2,
   Database,
-  UserCheck,
+  Mail,
+  KeyRound,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -25,20 +26,20 @@ export default function AdminModal() {
     isAdminOpen,
     closeAdmin,
     isAdminLoggedIn,
-    loginAdmin,
+    loginAdminAccount,
     logoutAdmin,
     products,
     dbUsers,
     adminOrders,
     adminEmail,
-    user,
     addProduct,
     toggleStockStatus,
   } = useShop();
 
+  const [inputAdminEmail, setInputAdminEmail] = useState(adminEmail);
   const [passcode, setPasscode] = useState('');
   const [loginError, setLoginError] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'customers' | 'products' | 'orders' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'customers' | 'orders' | 'settings'>('overview');
 
   // New product form state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -50,9 +51,9 @@ export default function AdminModal() {
 
   if (!isAdminOpen) return null;
 
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleAdminLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const success = loginAdmin(passcode);
+    const success = loginAdminAccount(inputAdminEmail, passcode);
     if (success) {
       setLoginError(false);
       setPasscode('');
@@ -105,7 +106,7 @@ export default function AdminModal() {
           transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
           className="relative w-full max-w-6xl max-h-[94vh] bg-luxury-black text-white overflow-hidden shadow-2xl border border-neutral-800 flex flex-col"
         >
-          {/* HEADER BAR WITH ALWAYS-VISIBLE PROMINENT ADD PRODUCT BUTTON */}
+          {/* DEDICATED ADMIN HEADER BAR */}
           <div className="p-4 sm:p-6 border-b border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-neutral-900/60">
             <div className="flex items-center gap-3">
               <div className="p-2 sm:p-2.5 bg-white/10 rounded-full text-white shrink-0">
@@ -114,14 +115,14 @@ export default function AdminModal() {
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[9px] sm:text-[10px] tracking-[0.3em] uppercase font-sans text-neutral-400 block">
-                    ADMIN PORTAL
+                    DEDICATED ADMIN PORTAL
                   </span>
                   <span className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">
                     {adminEmail}
                   </span>
                 </div>
                 <h3 className="text-lg sm:text-xl font-editorial font-light uppercase tracking-wider text-white">
-                  ATELIER Admin Database Portal
+                  ATELIER Admin Dashboard & Database
                 </h3>
               </div>
             </div>
@@ -129,7 +130,6 @@ export default function AdminModal() {
             <div className="flex items-center gap-2 sm:gap-3">
               {isAdminLoggedIn && (
                 <>
-                  {/* PROMINENT ADD NEW PRODUCT BUTTON IN TOP HEADER BAR */}
                   <button
                     onClick={handleOpenAddProductForm}
                     className="px-3.5 py-2 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-1.5 hover:bg-neutral-200 transition-all shadow-md shrink-0"
@@ -160,65 +160,87 @@ export default function AdminModal() {
 
           {/* MAIN BODY CONTENT */}
           {!isAdminLoggedIn ? (
-            /* LOGIN PASSCODE FORM */
-            <div className="p-8 md:p-16 flex flex-col items-center justify-center text-center space-y-8 my-auto">
-              <div className="w-16 h-16 rounded-full border border-emerald-500/40 bg-neutral-900 flex items-center justify-center text-emerald-400 mb-2">
+            /* DEDICATED ADMIN EMAIL & PASSWORD AUTHENTICATION FORM */
+            <div className="p-8 md:p-14 flex flex-col items-center justify-center text-center space-y-7 my-auto">
+              <div className="w-16 h-16 rounded-full border border-emerald-500/40 bg-neutral-900 flex items-center justify-center text-emerald-400 mb-1">
                 <Lock className="w-8 h-8 stroke-[1.5]" />
               </div>
 
               <div className="space-y-2 max-w-md">
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-950/60 border border-emerald-800 text-[10px] tracking-widest font-mono text-emerald-400 uppercase">
-                  <UserCheck className="w-3 h-3" />
-                  <span>Verified Identity: {user?.email}</span>
-                </div>
-                <h4 className="text-2xl font-editorial font-light tracking-wide text-white pt-2">
-                  Administrator PIN Verification
+                <span className="text-[10px] tracking-[0.3em] uppercase font-sans text-neutral-400 block">
+                  ADMINISTRATOR LOGIN
+                </span>
+                <h4 className="text-2xl font-editorial font-light tracking-wide text-white">
+                  Admin Account Authentication
                 </h4>
                 <p className="text-xs font-sans text-neutral-400 font-light leading-relaxed">
-                  You are signed in as <strong className="text-white">{adminEmail}</strong>. Enter your security PIN to unlock database records and inventory.
+                  Enter your Administrator Email & Secret PIN passcode to manage store inventory, orders, and customer databases.
                 </p>
               </div>
 
-              <form onSubmit={handleLoginSubmit} className="w-full max-w-xs space-y-4">
-                <div className="relative">
-                  <input
-                    type="password"
-                    autoFocus
-                    value={passcode}
-                    onChange={(e) => {
-                      setPasscode(e.target.value);
-                      if (loginError) setLoginError(false);
-                    }}
-                    placeholder="ENTER PIN (2026)"
-                    className={`w-full bg-neutral-900 border text-center text-sm font-sans tracking-[0.3em] uppercase py-3.5 px-4 text-white placeholder:text-neutral-600 focus:outline-none transition-all ${
-                      loginError ? 'border-rose-500 ring-1 ring-rose-500' : 'border-neutral-700 focus:border-white'
-                    }`}
-                  />
+              <form onSubmit={handleAdminLoginSubmit} className="w-full max-w-sm space-y-4 text-left">
+                {/* ADMIN EMAIL FIELD */}
+                <div className="space-y-1">
+                  <label className="text-[10px] tracking-widest font-sans uppercase text-neutral-400 block">
+                    Admin Email Address
+                  </label>
+                  <div className="flex items-center border border-neutral-700 bg-neutral-900 focus-within:border-white transition-all">
+                    <Mail className="w-4 h-4 text-neutral-500 ml-3 shrink-0" />
+                    <input
+                      type="email"
+                      required
+                      value={inputAdminEmail}
+                      onChange={(e) => setInputAdminEmail(e.target.value)}
+                      placeholder="admin@atelier.com"
+                      className="w-full bg-transparent p-3 text-xs tracking-wider font-mono text-white placeholder:text-neutral-600 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                {/* ADMIN PASSCODE / SECRET PIN */}
+                <div className="space-y-1">
+                  <label className="text-[10px] tracking-widest font-sans uppercase text-neutral-400 block">
+                    Admin Passcode / Secret PIN
+                  </label>
+                  <div className="flex items-center border border-neutral-700 bg-neutral-900 focus-within:border-white transition-all">
+                    <KeyRound className="w-4 h-4 text-neutral-500 ml-3 shrink-0" />
+                    <input
+                      type="password"
+                      required
+                      value={passcode}
+                      onChange={(e) => {
+                        setPasscode(e.target.value);
+                        if (loginError) setLoginError(false);
+                      }}
+                      placeholder="•••••••• (Demo PIN: 2026)"
+                      className="w-full bg-transparent p-3 text-xs tracking-wider font-mono text-white placeholder:text-neutral-600 focus:outline-none"
+                    />
+                  </div>
                 </div>
 
                 {loginError && (
-                  <p className="text-xs text-rose-400 font-sans tracking-wide flex items-center justify-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Invalid passcode. Try "2026"</span>
+                  <p className="text-xs text-rose-400 font-sans tracking-wide flex items-center gap-1 pt-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>Invalid passcode. Demo Admin PIN is "2026".</span>
                   </p>
                 )}
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 bg-white text-luxury-black text-xs uppercase tracking-[0.25em] font-sans font-semibold hover:bg-neutral-200 transition-all shadow-md"
+                  className="w-full py-3.5 bg-white text-luxury-black text-xs uppercase tracking-[0.25em] font-sans font-semibold hover:bg-neutral-200 transition-all shadow-md mt-2"
                 >
-                  Unlock Admin Portal
+                  Log In To Admin Dashboard
                 </button>
               </form>
 
               <span className="text-[10px] tracking-widest font-sans uppercase text-neutral-500">
-                Demo Security Passcode: <code className="text-neutral-300">2026</code>
+                Demo Credentials: Email: <code className="text-neutral-300">admin@atelier.com</code> | PIN: <code className="text-neutral-300">2026</code>
               </span>
             </div>
           ) : (
-            /* AUTHENTICATED DASHBOARD PORTAL WITH DEDICATED DATABASE VIEWS */
+            /* AUTHENTICATED DASHBOARD PORTAL */
             <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-              {/* PORTAL SIDEBAR NAVIGATION */}
+              {/* SIDEBAR */}
               <div className="w-full md:w-60 border-r border-neutral-800 p-3 sm:p-4 space-y-2 bg-neutral-900/30 flex md:flex-col overflow-x-auto md:overflow-x-visible shrink-0">
                 <button
                   onClick={() => setActiveTab('overview')}
@@ -309,7 +331,6 @@ export default function AdminModal() {
                         </p>
                       </div>
 
-                      {/* QUICK ADD PRODUCT CTA BANNER */}
                       <button
                         onClick={handleOpenAddProductForm}
                         className="px-4 py-2.5 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-md shrink-0"
@@ -319,7 +340,6 @@ export default function AdminModal() {
                       </button>
                     </div>
 
-                    {/* METRICS CARDS */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
                         <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
@@ -364,7 +384,7 @@ export default function AdminModal() {
                   </div>
                 )}
 
-                {/* TAB 2: PRODUCTS CATALOG TABLE + PROMINENT ADD PRODUCT BUTTON & FORM */}
+                {/* TAB 2: PRODUCTS CATALOG TABLE */}
                 {activeTab === 'products' && (
                   <div className="space-y-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-neutral-800">
@@ -375,7 +395,6 @@ export default function AdminModal() {
                         </p>
                       </div>
 
-                      {/* PROMINENT ADD PRODUCT BUTTON ON PRODUCTS PAGE */}
                       <button
                         onClick={() => setShowAddForm(!showAddForm)}
                         className="px-5 py-3 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-lg shrink-0"
@@ -385,7 +404,6 @@ export default function AdminModal() {
                       </button>
                     </div>
 
-                    {/* ADD PRODUCT FORM */}
                     {showAddForm && (
                       <form
                         onSubmit={handleCreateProductSubmit}
@@ -476,7 +494,6 @@ export default function AdminModal() {
                       </form>
                     )}
 
-                    {/* PRODUCT LIST TABLE */}
                     <div className="bg-neutral-900 border border-neutral-800 overflow-x-auto">
                       <table className="w-full text-left text-xs font-sans">
                         <thead className="border-b border-neutral-800 bg-neutral-950/60 text-[10px] uppercase tracking-widest text-neutral-400">
@@ -650,7 +667,7 @@ export default function AdminModal() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
                       <div className="p-4 bg-neutral-900 border border-neutral-800 space-y-2">
-                        <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Single Admin Access</span>
+                        <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Admin Authorization Email</span>
                         <div className="font-mono text-emerald-400 font-semibold">{adminEmail}</div>
                       </div>
 
@@ -666,7 +683,7 @@ export default function AdminModal() {
 
                       <div className="p-4 bg-neutral-900 border border-neutral-800 space-y-2">
                         <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Security Protocol</span>
-                        <div className="font-semibold text-emerald-400">256-Bit Encrypted Role-Based Access Control</div>
+                        <div className="font-semibold text-emerald-400">Isolated Admin Role-Based Access Control</div>
                       </div>
                     </div>
                   </div>

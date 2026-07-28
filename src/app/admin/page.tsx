@@ -15,24 +15,31 @@ import {
   LogOut,
   Database,
   ArrowLeft,
-  UserCheck,
+  Lock,
+  Mail,
+  KeyRound,
+  AlertCircle,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function AdminPage() {
   const router = useRouter();
   const {
-    user,
     adminEmail,
+    isAdminLoggedIn,
+    loginAdminAccount,
+    logoutAdmin,
     products,
     dbUsers,
     adminOrders,
     addProduct,
     toggleStockStatus,
-    logoutUser,
   } = useShop();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'customers' | 'products' | 'orders' | 'settings'>('products');
+  const [inputEmail, setInputEmail] = useState(adminEmail);
+  const [passcode, setPasscode] = useState('');
+  const [loginError, setLoginError] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'products' | 'customers' | 'orders' | 'settings'>('overview');
 
   // New product form state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -41,6 +48,17 @@ export default function AdminPage() {
   const [newPrice, setNewPrice] = useState('');
   const [newImage, setNewImage] = useState('');
   const [newDesc, setNewDesc] = useState('');
+
+  const handleAdminLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = loginAdminAccount(inputEmail, passcode);
+    if (success) {
+      setLoginError(false);
+      setPasscode('');
+    } else {
+      setLoginError(true);
+    }
+  };
 
   const handleOpenAddProductForm = () => {
     setActiveTab('products');
@@ -78,7 +96,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-luxury-black text-white flex flex-col">
-      {/* ROUTE TOP HEADER BAR WITH PROMINENT ADD PRODUCT BUTTON */}
+      {/* ROUTE TOP HEADER BAR */}
       <header className="p-4 sm:p-6 border-b border-neutral-800 bg-neutral-900/80 backdrop-blur-md sticky top-0 z-40">
         <div className="w-full px-2 sm:px-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3 sm:gap-4">
@@ -97,501 +115,586 @@ export default function AdminPage() {
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[10px] tracking-[0.3em] uppercase font-sans text-neutral-400 block">
-                    ADMIN PORTAL (TEST MODE UNLOCKED)
+                    SEPARATE ADMIN PORTAL (/admin)
                   </span>
                   <span className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">
-                    {user ? user.email : adminEmail}
+                    {adminEmail}
                   </span>
                 </div>
                 <h1 className="text-lg sm:text-xl font-editorial font-light uppercase tracking-wider text-white">
-                  ATELIER Database & Admin Management
+                  ATELIER Admin Dashboard & Database
                 </h1>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* PROMINENT ADD NEW PRODUCT BUTTON IN ROUTE HEADER BAR */}
-            <button
-              onClick={handleOpenAddProductForm}
-              className="px-4 py-2.5 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-lg shrink-0"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>+ Add Product</span>
-            </button>
+            {isAdminLoggedIn ? (
+              <>
+                <button
+                  onClick={handleOpenAddProductForm}
+                  className="px-4 py-2.5 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-lg shrink-0"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>+ Add Product</span>
+                </button>
 
-            <button
-              onClick={() => {
-                logoutUser();
-                router.push('/');
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-2.5 border border-neutral-700 text-xs tracking-wider uppercase font-sans hover:bg-rose-950 hover:border-rose-800 hover:text-rose-300 transition-all text-neutral-300 shrink-0"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Exit Portal</span>
-            </button>
+                <button
+                  onClick={() => {
+                    logoutAdmin();
+                    router.push('/');
+                  }}
+                  className="flex items-center gap-1.5 px-3.5 py-2.5 border border-neutral-700 text-xs tracking-wider uppercase font-sans hover:bg-rose-950 hover:border-rose-800 hover:text-rose-300 transition-all text-neutral-300 shrink-0"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Lock Session</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => router.push('/')}
+                className="px-3.5 py-2 border border-neutral-700 text-xs tracking-wider uppercase font-sans hover:bg-white/10 transition-colors text-neutral-300"
+              >
+                Back To Store
+              </button>
+            )}
           </div>
         </div>
       </header>
 
       {/* DASHBOARD BODY */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* SIDEBAR NAVIGATION */}
-        <aside className="w-full md:w-64 border-r border-neutral-800 p-3 sm:p-4 space-y-2 bg-neutral-900/30 flex md:flex-col overflow-x-auto md:overflow-x-visible shrink-0">
-          <button
-            onClick={() => setActiveTab('products')}
-            className={`flex-1 md:flex-none flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
-              activeTab === 'products'
-                ? 'bg-white text-luxury-black font-semibold'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <Package className="w-4 h-4" />
-              <span>Product Catalog</span>
-            </div>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
-              {products.length}
+      {!isAdminLoggedIn ? (
+        /* DEDICATED ADMIN LOGIN PAGE */
+        <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 text-center space-y-8 my-auto">
+          <div className="w-16 h-16 rounded-full border border-emerald-500/40 bg-neutral-900 flex items-center justify-center text-emerald-400 mb-1">
+            <Lock className="w-8 h-8 stroke-[1.5]" />
+          </div>
+
+          <div className="space-y-2 max-w-md">
+            <span className="text-[10px] tracking-[0.3em] uppercase font-sans text-neutral-400 block">
+              DEDICATED ROUTE ACCESS
             </span>
-          </button>
+            <h2 className="text-3xl font-editorial font-light tracking-wide text-white">
+              Administrator Portal Sign In
+            </h2>
+            <p className="text-xs font-sans text-neutral-400 font-light leading-relaxed">
+              Log in with Admin Email & Security Passcode to access product creation, stock status controls, customer records, and orders.
+            </p>
+          </div>
 
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`flex-1 md:flex-none flex items-center gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
-              activeTab === 'overview'
-                ? 'bg-white text-luxury-black font-semibold'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            <span>Analytics</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('customers')}
-            className={`flex-1 md:flex-none flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
-              activeTab === 'customers'
-                ? 'bg-white text-luxury-black font-semibold'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <Users className="w-4 h-4" />
-              <span>Customers</span>
-            </div>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
-              {dbUsers.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('orders')}
-            className={`flex-1 md:flex-none flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
-              activeTab === 'orders'
-                ? 'bg-white text-luxury-black font-semibold'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <div className="flex items-center gap-2.5">
-              <ShoppingBag className="w-4 h-4" />
-              <span>Placed Orders</span>
-            </div>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
-              {adminOrders.length}
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={`flex-1 md:flex-none flex items-center gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
-              activeTab === 'settings'
-                ? 'bg-white text-luxury-black font-semibold'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Database className="w-4 h-4" />
-            <span>DB Specs</span>
-          </button>
-        </aside>
-
-        {/* TAB PANELS CONTENT */}
-        <main className="flex-1 p-4 sm:p-6 md:p-10 space-y-8 overflow-y-auto max-h-[calc(100vh-80px)]">
-          {/* PRODUCTS CATALOG MANAGEMENT */}
-          {activeTab === 'products' && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-neutral-800">
-                <div>
-                  <h2 className="text-2xl font-editorial font-light text-white">Products Catalog Management (`products`)</h2>
-                  <p className="text-xs font-sans text-neutral-400 font-light mt-1">
-                    Add new products to the persistent catalog and toggle stock availability.
-                  </p>
-                </div>
-
-                {/* PROMINENT ADD PRODUCT BUTTON ON PRODUCTS PAGE */}
-                <button
-                  onClick={() => setShowAddForm(!showAddForm)}
-                  className="px-5 py-3 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-lg shrink-0"
-                >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>{showAddForm ? 'Close Add Form' : '+ Add New Product'}</span>
-                </button>
+          <form onSubmit={handleAdminLoginSubmit} className="w-full max-w-sm space-y-4 text-left">
+            <div className="space-y-1">
+              <label className="text-[10px] tracking-widest font-sans uppercase text-neutral-400 block">
+                Admin Email Address
+              </label>
+              <div className="flex items-center border border-neutral-700 bg-neutral-900 focus-within:border-white transition-all">
+                <Mail className="w-4 h-4 text-neutral-500 ml-3 shrink-0" />
+                <input
+                  type="email"
+                  required
+                  value={inputEmail}
+                  onChange={(e) => setInputEmail(e.target.value)}
+                  placeholder="admin@atelier.com"
+                  className="w-full bg-transparent p-3.5 text-xs tracking-wider font-mono text-white placeholder:text-neutral-600 focus:outline-none"
+                />
               </div>
+            </div>
 
-              {/* ADD PRODUCT FORM */}
-              {showAddForm && (
-                <motion.form
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  onSubmit={handleCreateProductSubmit}
-                  className="p-6 bg-neutral-900 border border-neutral-700 space-y-4 text-xs font-sans shadow-2xl"
-                >
-                  <h3 className="text-base font-editorial font-normal text-white uppercase tracking-wider">
-                    Create New Product Entry
-                  </h3>
+            <div className="space-y-1">
+              <label className="text-[10px] tracking-widest font-sans uppercase text-neutral-400 block">
+                Admin Passcode / PIN
+              </label>
+              <div className="flex items-center border border-neutral-700 bg-neutral-900 focus-within:border-white transition-all">
+                <KeyRound className="w-4 h-4 text-neutral-500 ml-3 shrink-0" />
+                <input
+                  type="password"
+                  required
+                  value={passcode}
+                  onChange={(e) => {
+                    setPasscode(e.target.value);
+                    if (loginError) setLoginError(false);
+                  }}
+                  placeholder="•••••••• (Demo PIN: 2026)"
+                  className="w-full bg-transparent p-3.5 text-xs tracking-wider font-mono text-white placeholder:text-neutral-600 focus:outline-none"
+                />
+              </div>
+            </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-[10px] text-neutral-400 uppercase tracking-widest block mb-1">
-                        Product Name
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={newTitle}
-                        onChange={(e) => setNewTitle(e.target.value)}
-                        placeholder="e.g. Silk Wrap Trench Coat"
-                        className="w-full bg-neutral-800 border border-neutral-700 p-3 text-white focus:outline-none focus:border-white"
-                      />
-                    </div>
+            {loginError && (
+              <p className="text-xs text-rose-400 font-sans tracking-wide flex items-center gap-1 pt-1">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>Invalid credentials. Demo Admin PIN is "2026".</span>
+              </p>
+            )}
 
-                    <div>
-                      <label className="text-[10px] text-neutral-400 uppercase tracking-widest block mb-1">
-                        Category
-                      </label>
-                      <select
-                        value={newCategory}
-                        onChange={(e) => setNewCategory(e.target.value as any)}
-                        className="w-full bg-neutral-800 border border-neutral-700 p-3 text-white focus:outline-none focus:border-white uppercase"
-                      >
-                        <option value="women">Women</option>
-                        <option value="men">Men</option>
-                        <option value="kids">Kids</option>
-                        <option value="accessories">Accessories</option>
-                      </select>
-                    </div>
+            <button
+              type="submit"
+              className="w-full py-4 bg-white text-luxury-black text-xs uppercase tracking-[0.25em] font-sans font-semibold hover:bg-neutral-200 transition-all shadow-md mt-2"
+            >
+              Sign In To Admin Dashboard
+            </button>
+          </form>
 
-                    <div>
-                      <label className="text-[10px] text-neutral-400 uppercase tracking-widest block mb-1">
-                        Price ($ USD)
-                      </label>
-                      <input
-                        type="number"
-                        required
-                        value={newPrice}
-                        onChange={(e) => setNewPrice(e.target.value)}
-                        placeholder="380"
-                        className="w-full bg-neutral-800 border border-neutral-700 p-3 text-white focus:outline-none focus:border-white"
-                      />
-                    </div>
+          <span className="text-[10px] tracking-widest font-sans uppercase text-neutral-500">
+            Demo Credentials: Email: <code className="text-neutral-300">admin@atelier.com</code> | PIN: <code className="text-neutral-300">2026</code>
+          </span>
+        </div>
+      ) : (
+        /* AUTHENTICATED DASHBOARD PORTAL */
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+          {/* SIDEBAR */}
+          <aside className="w-full md:w-64 border-r border-neutral-800 p-3 sm:p-4 space-y-2 bg-neutral-900/30 flex md:flex-col overflow-x-auto md:overflow-x-visible shrink-0">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`flex-1 md:flex-none flex items-center gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
+                activeTab === 'overview'
+                  ? 'bg-white text-luxury-black font-semibold'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4" />
+              <span>Analytics</span>
+            </button>
 
-                    <div>
-                      <label className="text-[10px] text-neutral-400 uppercase tracking-widest block mb-1">
-                        Image URL (Unsplash/HTTP)
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={newImage}
-                        onChange={(e) => setNewImage(e.target.value)}
-                        placeholder="https://images.unsplash.com/..."
-                        className="w-full bg-neutral-800 border border-neutral-700 p-3 text-white focus:outline-none focus:border-white"
-                      />
-                    </div>
-                  </div>
+            <button
+              onClick={() => setActiveTab('products')}
+              className={`flex-1 md:flex-none flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
+                activeTab === 'products'
+                  ? 'bg-white text-luxury-black font-semibold'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Package className="w-4 h-4" />
+                <span>Product Catalog</span>
+              </div>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
+                {products.length}
+              </span>
+            </button>
 
+            <button
+              onClick={() => setActiveTab('customers')}
+              className={`flex-1 md:flex-none flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
+                activeTab === 'customers'
+                  ? 'bg-white text-luxury-black font-semibold'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Users className="w-4 h-4" />
+                <span>Customers</span>
+              </div>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
+                {dbUsers.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`flex-1 md:flex-none flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
+                activeTab === 'orders'
+                  ? 'bg-white text-luxury-black font-semibold'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <ShoppingBag className="w-4 h-4" />
+                <span>Placed Orders</span>
+              </div>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
+                {adminOrders.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`flex-1 md:flex-none flex items-center gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
+                activeTab === 'settings'
+                  ? 'bg-white text-luxury-black font-semibold'
+                  : 'text-neutral-400 hover:text-white hover:bg-white/5'
+              }`}
+            >
+              <Database className="w-4 h-4" />
+              <span>DB Specs</span>
+            </button>
+          </aside>
+
+          {/* TAB PANELS CONTENT */}
+          <main className="flex-1 p-4 sm:p-6 md:p-10 space-y-8 overflow-y-auto max-h-[calc(100vh-80px)]">
+            {/* OVERVIEW */}
+            {activeTab === 'overview' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-neutral-900 border border-neutral-800">
                   <div>
-                    <label className="text-[10px] text-neutral-400 uppercase tracking-widest block mb-1">
-                      Short Editorial Description
-                    </label>
-                    <textarea
-                      value={newDesc}
-                      onChange={(e) => setNewDesc(e.target.value)}
-                      placeholder="Crafted from pure Mulberry silk with clean straight cuts..."
-                      className="w-full bg-neutral-800 border border-neutral-700 p-3 text-white focus:outline-none focus:border-white h-24"
-                    />
+                    <h2 className="text-2xl font-editorial font-light text-white">Database Analytics & Store Metrics</h2>
+                    <p className="text-xs font-sans text-neutral-400 font-light mt-1">
+                      Live synchronized metrics from persistent database tables.
+                    </p>
                   </div>
 
                   <button
-                    type="submit"
-                    className="px-8 py-3.5 bg-white text-luxury-black text-xs uppercase tracking-widest font-semibold hover:bg-neutral-200 transition-all shadow-md"
+                    onClick={handleOpenAddProductForm}
+                    className="px-5 py-3 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-md shrink-0"
                   >
-                    Publish Product To Catalog
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                    <span>+ Add New Product</span>
                   </button>
-                </motion.form>
-              )}
+                </div>
 
-              {/* PRODUCTS LIST TABLE */}
-              <div className="bg-neutral-900 border border-neutral-800 overflow-x-auto">
-                <table className="w-full text-left text-xs font-sans">
-                  <thead className="border-b border-neutral-800 bg-neutral-950/80 text-[10px] uppercase tracking-widest text-neutral-400">
-                    <tr>
-                      <th className="p-4">Product</th>
-                      <th className="p-4">Category</th>
-                      <th className="p-4">Price</th>
-                      <th className="p-4">Stock Status</th>
-                      <th className="p-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-800">
-                    {products.map((prod) => (
-                      <tr key={prod.id} className="hover:bg-neutral-800/50 transition-colors">
-                        <td className="p-4 flex items-center gap-3">
-                          <div className="relative w-9 h-12 bg-neutral-800 overflow-hidden shrink-0 border border-neutral-700">
-                            <Image src={prod.mainImage} alt={prod.name} fill className="object-cover" />
-                          </div>
-                          <span className="font-semibold text-white line-clamp-1">{prod.name}</span>
-                        </td>
-                        <td className="p-4 uppercase text-neutral-400 font-mono">{prod.category}</td>
-                        <td className="p-4 font-semibold text-white">${prod.price}</td>
-                        <td className="p-4">
-                          <span
-                            className={`px-2.5 py-1 text-[9px] uppercase font-semibold tracking-wider ${
-                              prod.inStock ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800'
-                            }`}
-                          >
-                            {prod.inStock ? 'IN STOCK' : 'OUT OF STOCK'}
-                          </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          <button
-                            onClick={() => toggleStockStatus(prod.id)}
-                            className="px-3.5 py-1.5 border border-neutral-700 text-[10px] uppercase tracking-wider hover:bg-white hover:text-black transition-all"
-                          >
-                            Toggle Stock
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
+                    <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
+                      Gross Revenue
+                    </span>
+                    <div className="text-3xl font-sans font-semibold text-white">$142,500</div>
+                    <span className="text-[10px] text-emerald-400 font-sans tracking-wide">
+                      ↑ +18.4% this month
+                    </span>
+                  </div>
+
+                  <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
+                    <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
+                      Registered Customers
+                    </span>
+                    <div className="text-3xl font-sans font-semibold text-white">{dbUsers.length}</div>
+                    <span className="text-[10px] text-emerald-400 font-sans tracking-wide">
+                      Verified user database records
+                    </span>
+                  </div>
+
+                  <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
+                    <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
+                      Total Orders
+                    </span>
+                    <div className="text-3xl font-sans font-semibold text-white">{adminOrders.length}</div>
+                    <span className="text-[10px] text-emerald-400 font-sans tracking-wide">
+                      Placed orders table
+                    </span>
+                  </div>
+
+                  <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
+                    <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
+                      Catalog Items
+                    </span>
+                    <div className="text-3xl font-sans font-semibold text-white">{products.length}</div>
+                    <span className="text-[10px] text-blue-400 font-sans tracking-wide">
+                      Persistent inventory
+                    </span>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* OVERVIEW & METRICS */}
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-neutral-900 border border-neutral-800">
+            {/* PRODUCTS CATALOG MANAGEMENT */}
+            {activeTab === 'products' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-neutral-800">
+                  <div>
+                    <h2 className="text-2xl font-editorial font-light text-white">Products Catalog Management (`products`)</h2>
+                    <p className="text-xs font-sans text-neutral-400 font-light mt-1">
+                      Add new products to the persistent catalog and toggle stock availability.
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => setShowAddForm(!showAddForm)}
+                    className="px-5 py-3 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-lg shrink-0"
+                  >
+                    <Plus className="w-4 h-4 stroke-[3]" />
+                    <span>{showAddForm ? 'Close Add Form' : '+ Add New Product'}</span>
+                  </button>
+                </div>
+
+                {showAddForm && (
+                  <motion.form
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    onSubmit={handleCreateProductSubmit}
+                    className="p-6 bg-neutral-900 border border-neutral-700 space-y-4 text-xs font-sans shadow-2xl"
+                  >
+                    <h3 className="text-base font-editorial font-normal text-white uppercase tracking-wider">
+                      Create New Product Entry
+                    </h3>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-[10px] text-neutral-400 uppercase tracking-widest block mb-1">
+                          Product Name
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={newTitle}
+                          onChange={(e) => setNewTitle(e.target.value)}
+                          placeholder="e.g. Silk Wrap Trench Coat"
+                          className="w-full bg-neutral-800 border border-neutral-700 p-3 text-white focus:outline-none focus:border-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-neutral-400 uppercase tracking-widest block mb-1">
+                          Category
+                        </label>
+                        <select
+                          value={newCategory}
+                          onChange={(e) => setNewCategory(e.target.value as any)}
+                          className="w-full bg-neutral-800 border border-neutral-700 p-3 text-white focus:outline-none focus:border-white uppercase"
+                        >
+                          <option value="women">Women</option>
+                          <option value="men">Men</option>
+                          <option value="kids">Kids</option>
+                          <option value="accessories">Accessories</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-neutral-400 uppercase tracking-widest block mb-1">
+                          Price ($ USD)
+                        </label>
+                        <input
+                          type="number"
+                          required
+                          value={newPrice}
+                          onChange={(e) => setNewPrice(e.target.value)}
+                          placeholder="380"
+                          className="w-full bg-neutral-800 border border-neutral-700 p-3 text-white focus:outline-none focus:border-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-[10px] text-neutral-400 uppercase tracking-widest block mb-1">
+                          Image URL (Unsplash/HTTP)
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={newImage}
+                          onChange={(e) => setNewImage(e.target.value)}
+                          placeholder="https://images.unsplash.com/..."
+                          className="w-full bg-neutral-800 border border-neutral-700 p-3 text-white focus:outline-none focus:border-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] text-neutral-400 uppercase tracking-widest block mb-1">
+                        Short Editorial Description
+                      </label>
+                      <textarea
+                        value={newDesc}
+                        onChange={(e) => setNewDesc(e.target.value)}
+                        placeholder="Crafted from pure Mulberry silk with clean straight cuts..."
+                        className="w-full bg-neutral-800 border border-neutral-700 p-3 text-white focus:outline-none focus:border-white h-24"
+                      />
+                    </div>
+
+                    <button
+                      type="submit"
+                      className="px-8 py-3.5 bg-white text-luxury-black text-xs uppercase tracking-widest font-semibold hover:bg-neutral-200 transition-all shadow-md"
+                    >
+                      Publish Product To Catalog
+                    </button>
+                  </motion.form>
+                )}
+
+                <div className="bg-neutral-900 border border-neutral-800 overflow-x-auto">
+                  <table className="w-full text-left text-xs font-sans">
+                    <thead className="border-b border-neutral-800 bg-neutral-950/80 text-[10px] uppercase tracking-widest text-neutral-400">
+                      <tr>
+                        <th className="p-4">Product</th>
+                        <th className="p-4">Category</th>
+                        <th className="p-4">Price</th>
+                        <th className="p-4">Stock Status</th>
+                        <th className="p-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800">
+                      {products.map((prod) => (
+                        <tr key={prod.id} className="hover:bg-neutral-800/50 transition-colors">
+                          <td className="p-4 flex items-center gap-3">
+                            <div className="relative w-9 h-12 bg-neutral-800 overflow-hidden shrink-0 border border-neutral-700">
+                              <Image src={prod.mainImage} alt={prod.name} fill className="object-cover" />
+                            </div>
+                            <span className="font-semibold text-white line-clamp-1">{prod.name}</span>
+                          </td>
+                          <td className="p-4 uppercase text-neutral-400 font-mono">{prod.category}</td>
+                          <td className="p-4 font-semibold text-white">${prod.price}</td>
+                          <td className="p-4">
+                            <span
+                              className={`px-2.5 py-1 text-[9px] uppercase font-semibold tracking-wider ${
+                                prod.inStock ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-rose-950 text-rose-400 border border-rose-800'
+                              }`}
+                            >
+                              {prod.inStock ? 'IN STOCK' : 'OUT OF STOCK'}
+                            </span>
+                          </td>
+                          <td className="p-4 text-right">
+                            <button
+                              onClick={() => toggleStockStatus(prod.id)}
+                              className="px-3.5 py-1.5 border border-neutral-700 text-[10px] uppercase tracking-wider hover:bg-white hover:text-black transition-all"
+                            >
+                              Toggle Stock
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* REGISTERED CUSTOMERS LIST TABLE */}
+            {activeTab === 'customers' && (
+              <div className="space-y-6">
                 <div>
-                  <h2 className="text-2xl font-editorial font-light text-white">Database Analytics & Store Metrics</h2>
+                  <h2 className="text-2xl font-editorial font-light text-white">Registered Customers Database Table (`users`)</h2>
                   <p className="text-xs font-sans text-neutral-400 font-light mt-1">
-                    Live synchronized metrics from persistent database tables.
+                    Viewing all registered customer accounts, email verification status, and role assignments.
                   </p>
                 </div>
 
-                {/* QUICK ADD PRODUCT CTA BANNER */}
-                <button
-                  onClick={handleOpenAddProductForm}
-                  className="px-5 py-3 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-md shrink-0"
-                >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>+ Add New Product</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
-                    Gross Revenue
-                  </span>
-                  <div className="text-3xl font-sans font-semibold text-white">$142,500</div>
-                  <span className="text-[10px] text-emerald-400 font-sans tracking-wide">
-                    ↑ +18.4% this month
-                  </span>
-                </div>
-
-                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
-                    Registered Customers
-                  </span>
-                  <div className="text-3xl font-sans font-semibold text-white">{dbUsers.length}</div>
-                  <span className="text-[10px] text-emerald-400 font-sans tracking-wide">
-                    Verified user database records
-                  </span>
-                </div>
-
-                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
-                    Total Orders
-                  </span>
-                  <div className="text-3xl font-sans font-semibold text-white">{adminOrders.length}</div>
-                  <span className="text-[10px] text-emerald-400 font-sans tracking-wide">
-                    Placed orders table
-                  </span>
-                </div>
-
-                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
-                    Catalog Items
-                  </span>
-                  <div className="text-3xl font-sans font-semibold text-white">{products.length}</div>
-                  <span className="text-[10px] text-blue-400 font-sans tracking-wide">
-                    Persistent inventory
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* REGISTERED CUSTOMERS LIST TABLE */}
-          {activeTab === 'customers' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-editorial font-light text-white">Registered Customers Database Table (`users`)</h2>
-                <p className="text-xs font-sans text-neutral-400 font-light mt-1">
-                  Viewing all registered customer accounts, email verification status, and role assignments.
-                </p>
-              </div>
-
-              <div className="bg-neutral-900 border border-neutral-800 overflow-x-auto">
-                <table className="w-full text-left text-xs font-sans">
-                  <thead className="border-b border-neutral-800 bg-neutral-950/80 text-[10px] uppercase tracking-widest text-neutral-400">
-                    <tr>
-                      <th className="p-4">User ID</th>
-                      <th className="p-4">Customer Name</th>
-                      <th className="p-4">Email Address</th>
-                      <th className="p-4">Verified Status</th>
-                      <th className="p-4">Joined Date</th>
-                      <th className="p-4 text-right">Role</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-800">
-                    {dbUsers.map((u) => (
-                      <tr key={u.id} className="hover:bg-neutral-800/50 transition-colors">
-                        <td className="p-4 font-mono text-neutral-400 text-[11px]">{u.id}</td>
-                        <td className="p-4 font-semibold text-white">{u.name}</td>
-                        <td className="p-4 font-mono text-neutral-300">{u.email}</td>
-                        <td className="p-4">
-                          <span className="inline-flex items-center gap-1 bg-emerald-950 text-emerald-400 border border-emerald-800 text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Verified ✓
-                          </span>
-                        </td>
-                        <td className="p-4 text-neutral-400">{u.joinedDate}</td>
-                        <td className="p-4 text-right">
-                          <span
-                            className={`px-2.5 py-1 text-[9px] uppercase font-mono tracking-wider ${
-                              u.role === 'admin'
-                                ? 'bg-purple-950 text-purple-300 border border-purple-800'
-                                : 'bg-neutral-800 text-neutral-300'
-                            }`}
-                          >
-                            {u.role}
-                          </span>
-                        </td>
+                <div className="bg-neutral-900 border border-neutral-800 overflow-x-auto">
+                  <table className="w-full text-left text-xs font-sans">
+                    <thead className="border-b border-neutral-800 bg-neutral-950/80 text-[10px] uppercase tracking-widest text-neutral-400">
+                      <tr>
+                        <th className="p-4">User ID</th>
+                        <th className="p-4">Customer Name</th>
+                        <th className="p-4">Email Address</th>
+                        <th className="p-4">Verified Status</th>
+                        <th className="p-4">Joined Date</th>
+                        <th className="p-4 text-right">Role</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800">
+                      {dbUsers.map((u) => (
+                        <tr key={u.id} className="hover:bg-neutral-800/50 transition-colors">
+                          <td className="p-4 font-mono text-neutral-400 text-[11px]">{u.id}</td>
+                          <td className="p-4 font-semibold text-white">{u.name}</td>
+                          <td className="p-4 font-mono text-neutral-300">{u.email}</td>
+                          <td className="p-4">
+                            <span className="inline-flex items-center gap-1 bg-emerald-950 text-emerald-400 border border-emerald-800 text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">
+                              <CheckCircle2 className="w-3 h-3" />
+                              Verified ✓
+                            </span>
+                          </td>
+                          <td className="p-4 text-neutral-400">{u.joinedDate}</td>
+                          <td className="p-4 text-right">
+                            <span
+                              className={`px-2.5 py-1 text-[9px] uppercase font-mono tracking-wider ${
+                                u.role === 'admin'
+                                  ? 'bg-purple-950 text-purple-300 border border-purple-800'
+                                  : 'bg-neutral-800 text-neutral-300'
+                              }`}
+                            >
+                              {u.role}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* PLACED ORDERS MANAGEMENT TABLE */}
-          {activeTab === 'orders' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-editorial font-light text-white">Placed Customer Orders (`orders`)</h2>
-                <p className="text-xs font-sans text-neutral-400 font-light mt-1">
-                  Real-time customer orders, items breakdown, payment status, and fulfillment.
-                </p>
-              </div>
+            {/* PLACED ORDERS MANAGEMENT TABLE */}
+            {activeTab === 'orders' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-editorial font-light text-white">Placed Customer Orders (`orders`)</h2>
+                  <p className="text-xs font-sans text-neutral-400 font-light mt-1">
+                    Real-time customer orders, items breakdown, payment status, and fulfillment.
+                  </p>
+                </div>
 
-              <div className="bg-neutral-900 border border-neutral-800 overflow-x-auto">
-                <table className="w-full text-left text-xs font-sans">
-                  <thead className="border-b border-neutral-800 bg-neutral-950/80 text-[10px] uppercase tracking-widest text-neutral-400">
-                    <tr>
-                      <th className="p-4">Order ID</th>
-                      <th className="p-4">Customer</th>
-                      <th className="p-4">Date</th>
-                      <th className="p-4">Items Count</th>
-                      <th className="p-4">Total Amount</th>
-                      <th className="p-4">Payment</th>
-                      <th className="p-4 text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-800">
-                    {adminOrders.map((ord) => (
-                      <tr key={ord.id} className="hover:bg-neutral-800/50 transition-colors">
-                        <td className="p-4 font-mono text-neutral-300 font-semibold">{ord.id}</td>
-                        <td className="p-4">
-                          <span className="font-semibold text-white block">{ord.customerName}</span>
-                          <span className="text-[10px] text-neutral-500 font-mono">{ord.email}</span>
-                        </td>
-                        <td className="p-4 text-neutral-400">{ord.date}</td>
-                        <td className="p-4 text-neutral-300">{ord.itemsCount} Items</td>
-                        <td className="p-4 font-semibold text-white">${ord.total}</td>
-                        <td className="p-4">
-                          <span className="text-emerald-400 font-mono text-[10px]">
-                            {ord.paymentStatus} ✓
-                          </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          <span
-                            className={`px-2.5 py-1 text-[9px] uppercase font-semibold tracking-wider ${
-                              ord.status === 'Delivered'
-                                ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                                : ord.status === 'Shipped'
-                                ? 'bg-blue-950 text-blue-400 border border-blue-800'
-                                : 'bg-amber-950 text-amber-400 border border-amber-800'
-                            }`}
-                          >
-                            {ord.status}
-                          </span>
-                        </td>
+                <div className="bg-neutral-900 border border-neutral-800 overflow-x-auto">
+                  <table className="w-full text-left text-xs font-sans">
+                    <thead className="border-b border-neutral-800 bg-neutral-950/80 text-[10px] uppercase tracking-widest text-neutral-400">
+                      <tr>
+                        <th className="p-4">Order ID</th>
+                        <th className="p-4">Customer</th>
+                        <th className="p-4">Date</th>
+                        <th className="p-4">Items Count</th>
+                        <th className="p-4">Total Amount</th>
+                        <th className="p-4">Payment</th>
+                        <th className="p-4 text-right">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {/* DB SPECS */}
-          {activeTab === 'settings' && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-editorial font-light text-white">Database System Specs</h2>
-                <p className="text-xs font-sans text-neutral-400 font-light mt-1">
-                  Cloud database integration endpoints and security protocols.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
-                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Access Control Mode</span>
-                  <div className="font-mono text-emerald-400 font-semibold">Test Mode Unlocked / Direct Admin Access</div>
-                </div>
-
-                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Database Engine</span>
-                  <div className="font-semibold text-white">PostgreSQL / Supabase Ready Schema</div>
-                </div>
-
-                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Active Tables</span>
-                  <div className="font-mono text-neutral-300">users • orders • products</div>
-                </div>
-
-                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Security Protocol</span>
-                  <div className="font-semibold text-emerald-400">Role-Based Access Control (RBAC)</div>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800">
+                      {adminOrders.map((ord) => (
+                        <tr key={ord.id} className="hover:bg-neutral-800/50 transition-colors">
+                          <td className="p-4 font-mono text-neutral-300 font-semibold">{ord.id}</td>
+                          <td className="p-4">
+                            <span className="font-semibold text-white block">{ord.customerName}</span>
+                            <span className="text-[10px] text-neutral-500 font-mono">{ord.email}</span>
+                          </td>
+                          <td className="p-4 text-neutral-400">{ord.date}</td>
+                          <td className="p-4 text-neutral-300">{ord.itemsCount} Items</td>
+                          <td className="p-4 font-semibold text-white">${ord.total}</td>
+                          <td className="p-4">
+                            <span className="text-emerald-400 font-mono text-[10px]">
+                              {ord.paymentStatus} ✓
+                            </span>
+                          </td>
+                          <td className="p-4 text-right">
+                            <span
+                              className={`px-2.5 py-1 text-[9px] uppercase font-semibold tracking-wider ${
+                                ord.status === 'Delivered'
+                                  ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                                  : ord.status === 'Shipped'
+                                  ? 'bg-blue-950 text-blue-400 border border-blue-800'
+                                  : 'bg-amber-950 text-amber-400 border border-amber-800'
+                              }`}
+                            >
+                              {ord.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            </div>
-          )}
-        </main>
-      </div>
+            )}
+
+            {/* DB SPECS */}
+            {activeTab === 'settings' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl font-editorial font-light text-white">Database System Specs</h2>
+                  <p className="text-xs font-sans text-neutral-400 font-light mt-1">
+                    Cloud database integration endpoints and security protocols.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
+                  <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Admin Authorization Email</span>
+                    <div className="font-mono text-emerald-400 font-semibold">{adminEmail}</div>
+                  </div>
+
+                  <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Database Engine</span>
+                    <div className="font-semibold text-white">PostgreSQL / Supabase Ready Schema</div>
+                  </div>
+
+                  <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Active Tables</span>
+                    <div className="font-mono text-neutral-300">users • orders • products</div>
+                  </div>
+
+                  <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Security Protocol</span>
+                    <div className="font-semibold text-emerald-400">Isolated Admin Role-Based Access Control</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </main>
+        </div>
+      )}
     </div>
   );
 }

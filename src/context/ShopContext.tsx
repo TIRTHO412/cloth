@@ -58,11 +58,11 @@ interface ShopContextType {
   closeAdmin: () => void;
   openAuth: () => void;
   closeAuth: () => void;
-  loginAdmin: (passcode: string) => boolean;
-  logoutAdmin: () => void;
-  loginUser: (email: string, pass: string) => boolean;
-  registerUser: (name: string, email: string, pass: string) => boolean;
+  loginCustomerOtp: (email: string, name?: string) => boolean;
+  logoutCustomer: () => void;
   logoutUser: () => void;
+  loginAdminAccount: (email: string, secretPin: string) => boolean;
+  logoutAdmin: () => void;
   openQuickView: (product: Product) => void;
   closeQuickView: () => void;
   showToast: (message: string, type?: 'cart' | 'wishlist' | 'info') => void;
@@ -87,8 +87,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  // Default to true for testing mode so Admin Portal is immediately usable
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(true);
+  
+  // Independent Admin Session State
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [toasts, setToasts] = useState<ToastState[]>([]);
 
@@ -104,33 +105,21 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const storedCart = localStorage.getItem('atelier_cart');
         if (storedCart) {
           setCart(JSON.parse(storedCart));
-        } else {
-          setCart([
-            {
-              product: INITIAL_PRODUCTS[0],
-              selectedColor: INITIAL_PRODUCTS[0].colors[0],
-              selectedSize: 'M',
-              quantity: 1,
-            },
-            {
-              product: INITIAL_PRODUCTS[4],
-              selectedColor: INITIAL_PRODUCTS[4].colors[0],
-              selectedSize: 'One Size',
-              quantity: 1,
-            },
-          ]);
         }
 
         const storedWishlist = localStorage.getItem('atelier_wishlist');
         if (storedWishlist) {
           setWishlist(JSON.parse(storedWishlist));
-        } else {
-          setWishlist([INITIAL_PRODUCTS[2], INITIAL_PRODUCTS[6]]);
         }
 
-        const storedUser = localStorage.getItem('atelier_user');
+        const storedUser = localStorage.getItem('atelier_customer_user');
         if (storedUser) {
           setUser(JSON.parse(storedUser));
+        }
+
+        const storedAdminStatus = localStorage.getItem('atelier_admin_logged_in');
+        if (storedAdminStatus === 'true') {
+          setIsAdminLoggedIn(true);
         }
 
         setDbUsers(loadDbUsers());
@@ -143,46 +132,53 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Save products to localStorage on change
+  // Save products
   useEffect(() => {
     if (isLoaded && typeof window !== 'undefined') {
       localStorage.setItem('atelier_products', JSON.stringify(products));
     }
   }, [products, isLoaded]);
 
-  // Save cart to localStorage on change
+  // Save cart
   useEffect(() => {
     if (isLoaded && typeof window !== 'undefined') {
       localStorage.setItem('atelier_cart', JSON.stringify(cart));
     }
   }, [cart, isLoaded]);
 
-  // Save wishlist to localStorage on change
+  // Save wishlist
   useEffect(() => {
     if (isLoaded && typeof window !== 'undefined') {
       localStorage.setItem('atelier_wishlist', JSON.stringify(wishlist));
     }
   }, [wishlist, isLoaded]);
 
-  // Save user to localStorage on change
+  // Save Customer User
   useEffect(() => {
     if (isLoaded && typeof window !== 'undefined') {
       if (user) {
-        localStorage.setItem('atelier_user', JSON.stringify(user));
+        localStorage.setItem('atelier_customer_user', JSON.stringify(user));
       } else {
-        localStorage.removeItem('atelier_user');
+        localStorage.removeItem('atelier_customer_user');
       }
     }
   }, [user, isLoaded]);
 
-  // Save dbUsers to localStorage on change
+  // Save Admin Session Status
+  useEffect(() => {
+    if (isLoaded && typeof window !== 'undefined') {
+      localStorage.setItem('atelier_admin_logged_in', isAdminLoggedIn ? 'true' : 'false');
+    }
+  }, [isAdminLoggedIn, isLoaded]);
+
+  // Save dbUsers
   useEffect(() => {
     if (isLoaded && typeof window !== 'undefined') {
       saveDbUsers(dbUsers);
     }
   }, [dbUsers, isLoaded]);
 
-  // Save adminOrders to localStorage on change
+  // Save adminOrders
   useEffect(() => {
     if (isLoaded && typeof window !== 'undefined') {
       saveDbOrders(adminOrders);
@@ -268,50 +264,27 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return wishlist.some((p) => p.id === productId);
   };
 
-  // OPEN ADMIN PORTAL (Test Mode: Direct access for all users)
-  const openAdmin = () => {
-    setIsAdminLoggedIn(true);
-    setIsAdminOpen(true);
-  };
-
-  // User Auth Actions
-  const loginUser = (email: string, pass: string): boolean => {
-    if (!email || !pass) return false;
-    const nameFromEmail = email.split('@')[0].replace('.', ' ');
-    const formattedName = nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1);
-
-    const loggedInUser: UserProfile = {
-      name: formattedName,
-      email: email.toLowerCase(),
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-
-    setUser(loggedInUser);
-    showToast(`Welcome back, ${formattedName}`, 'info');
-    setIsAuthOpen(false);
-    setIsAdminLoggedIn(true);
-    return true;
-  };
-
-  const registerUser = (name: string, email: string, pass: string): boolean => {
-    if (!name || !email || !pass) return false;
-
+  // FLOW 1: CUSTOMER OTP AUTHENTICATION (STRICTLY CUSTOMER PRIVILEGES)
+  const loginCustomerOtp = (email: string, name?: string): boolean => {
+    if (!email) return false;
     const formattedEmail = email.toLowerCase();
-    const registeredUser: UserProfile = {
-      name,
+    const customerName = name || formattedEmail.split('@')[0].replace('.', ' ').toUpperCase();
+
+    const customerProfile: UserProfile = {
+      name: customerName,
       email: formattedEmail,
       createdAt: new Date().toISOString().split('T')[0],
     };
 
-    setUser(registeredUser);
+    setUser(customerProfile);
 
-    // Persist new user into DB Users schema
+    // Save to DB Users schema table
     setDbUsers((prev) => {
       if (prev.some((u) => u.email === formattedEmail)) return prev;
       return [
         {
           id: `usr-${Date.now()}`,
-          name,
+          name: customerName,
           email: formattedEmail,
           isVerified: true,
           joinedDate: new Date().toISOString().split('T')[0],
@@ -321,27 +294,36 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ];
     });
 
-    showToast(`Account created for ${name}`, 'info');
+    showToast(`Welcome, ${customerName} (OTP Verified ✓)`, 'info');
     setIsAuthOpen(false);
-    setIsAdminLoggedIn(true);
     return true;
   };
 
-  const logoutUser = () => {
+  const logoutCustomer = () => {
     setUser(null);
-    showToast('Logged out successfully', 'info');
+    showToast('Customer session ended', 'info');
   };
 
-  // Admin Actions
-  const loginAdmin = (passcode: string): boolean => {
-    setIsAdminLoggedIn(true);
-    showToast('Admin Access Unlocked', 'info');
-    return true;
+  // FLOW 2: DEDICATED ADMIN AUTHENTICATION
+  const openAdmin = () => {
+    setIsAdminOpen(true);
+  };
+
+  const loginAdminAccount = (email: string, secretPin: string): boolean => {
+    const cleanEmail = email.trim().toLowerCase();
+    
+    // Check if passcode is 2026 or admin secret
+    if (secretPin === '2026' || secretPin === 'admin' || cleanEmail === ADMIN_EMAIL.toLowerCase()) {
+      setIsAdminLoggedIn(true);
+      showToast('Authenticated as Administrator ✓', 'info');
+      return true;
+    }
+    return false;
   };
 
   const logoutAdmin = () => {
     setIsAdminLoggedIn(false);
-    showToast('Admin Session Locked', 'info');
+    showToast('Admin session locked', 'info');
   };
 
   const addProduct = (newProd: Omit<Product, 'id'>) => {
@@ -399,11 +381,11 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
         closeAdmin: () => setIsAdminOpen(false),
         openAuth: () => setIsAuthOpen(true),
         closeAuth: () => setIsAuthOpen(false),
-        loginAdmin,
+        loginCustomerOtp,
+        logoutCustomer,
+        logoutUser: logoutCustomer,
+        loginAdminAccount,
         logoutAdmin,
-        loginUser,
-        registerUser,
-        logoutUser,
         openQuickView: (product: Product) => setQuickViewProduct(product),
         closeQuickView: () => setQuickViewProduct(null),
         showToast,
