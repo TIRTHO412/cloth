@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useShop } from '@/context/ShopContext';
@@ -12,7 +12,6 @@ import {
   Users,
   Plus,
   CheckCircle2,
-  AlertCircle,
   LogOut,
   Database,
   ArrowLeft,
@@ -31,11 +30,9 @@ export default function AdminPage() {
     addProduct,
     toggleStockStatus,
     logoutUser,
-    showToast,
   } = useShop();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'customers' | 'products' | 'orders' | 'settings'>('overview');
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'customers' | 'products' | 'orders' | 'settings'>('products');
 
   // New product form state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -44,35 +41,6 @@ export default function AdminPage() {
   const [newPrice, setNewPrice] = useState('');
   const [newImage, setNewImage] = useState('');
   const [newDesc, setNewDesc] = useState('');
-
-  // ROUTE GUARD: Strictly restrict /admin to authorized admin email
-  useEffect(() => {
-    if (!user) {
-      showToast('Unauthorized Access: Please sign in with administrator credentials.', 'info');
-      router.push('/');
-      return;
-    }
-
-    if (user.email.toLowerCase() !== adminEmail.toLowerCase()) {
-      showToast(`Unauthorized Access: Only ${adminEmail} is authorized to access /admin portal.`, 'info');
-      router.push('/');
-      return;
-    }
-
-    setIsAuthorized(true);
-  }, [user, adminEmail, router, showToast]);
-
-  if (!isAuthorized) {
-    return (
-      <div className="min-h-screen bg-luxury-black text-white flex flex-col items-center justify-center p-6 text-center space-y-4">
-        <div className="w-12 h-12 rounded-full border border-rose-500/40 bg-neutral-900 flex items-center justify-center text-rose-500 animate-pulse">
-          <AlertCircle className="w-6 h-6" />
-        </div>
-        <h2 className="text-2xl font-editorial font-light tracking-wide">Checking Authorization...</h2>
-        <p className="text-xs font-sans text-neutral-400">Verifying administrator credentials for {adminEmail}</p>
-      </div>
-    );
-  }
 
   const handleOpenAddProductForm = () => {
     setActiveTab('products');
@@ -129,10 +97,10 @@ export default function AdminPage() {
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-[10px] tracking-[0.3em] uppercase font-sans text-neutral-400 block">
-                    ADMIN ROUTE (/admin)
+                    ADMIN PORTAL (TEST MODE UNLOCKED)
                   </span>
                   <span className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[9px] font-mono px-2 py-0.5 uppercase tracking-wider">
-                    {adminEmail}
+                    {user ? user.email : adminEmail}
                   </span>
                 </div>
                 <h1 className="text-lg sm:text-xl font-editorial font-light uppercase tracking-wider text-white">
@@ -160,7 +128,7 @@ export default function AdminPage() {
               className="flex items-center gap-1.5 px-3.5 py-2.5 border border-neutral-700 text-xs tracking-wider uppercase font-sans hover:bg-rose-950 hover:border-rose-800 hover:text-rose-300 transition-all text-neutral-300 shrink-0"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Log Out Admin</span>
+              <span className="hidden sm:inline">Exit Portal</span>
             </button>
           </div>
         </div>
@@ -170,18 +138,6 @@ export default function AdminPage() {
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* SIDEBAR NAVIGATION */}
         <aside className="w-full md:w-64 border-r border-neutral-800 p-3 sm:p-4 space-y-2 bg-neutral-900/30 flex md:flex-col overflow-x-auto md:overflow-x-visible shrink-0">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`flex-1 md:flex-none flex items-center gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
-              activeTab === 'overview'
-                ? 'bg-white text-luxury-black font-semibold'
-                : 'text-neutral-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            <span>Analytics</span>
-          </button>
-
           <button
             onClick={() => setActiveTab('products')}
             className={`flex-1 md:flex-none flex items-center justify-between gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
@@ -197,6 +153,18 @@ export default function AdminPage() {
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-300">
               {products.length}
             </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`flex-1 md:flex-none flex items-center gap-2.5 px-3.5 py-2.5 text-[11px] sm:text-xs tracking-wider uppercase font-sans transition-all text-left whitespace-nowrap ${
+              activeTab === 'overview'
+                ? 'bg-white text-luxury-black font-semibold'
+                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <TrendingUp className="w-4 h-4" />
+            <span>Analytics</span>
           </button>
 
           <button
@@ -248,71 +216,6 @@ export default function AdminPage() {
 
         {/* TAB PANELS CONTENT */}
         <main className="flex-1 p-4 sm:p-6 md:p-10 space-y-8 overflow-y-auto max-h-[calc(100vh-80px)]">
-          {/* OVERVIEW & METRICS */}
-          {activeTab === 'overview' && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-neutral-900 border border-neutral-800">
-                <div>
-                  <h2 className="text-2xl font-editorial font-light text-white">Database Analytics & Store Metrics</h2>
-                  <p className="text-xs font-sans text-neutral-400 font-light mt-1">
-                    Live synchronized metrics from persistent database tables.
-                  </p>
-                </div>
-
-                {/* QUICK ADD PRODUCT CTA BANNER */}
-                <button
-                  onClick={handleOpenAddProductForm}
-                  className="px-5 py-3 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-md shrink-0"
-                >
-                  <Plus className="w-4 h-4 stroke-[3]" />
-                  <span>+ Add New Product</span>
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
-                    Gross Revenue
-                  </span>
-                  <div className="text-3xl font-sans font-semibold text-white">$142,500</div>
-                  <span className="text-[10px] text-emerald-400 font-sans tracking-wide">
-                    ↑ +18.4% this month
-                  </span>
-                </div>
-
-                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
-                    Registered Customers
-                  </span>
-                  <div className="text-3xl font-sans font-semibold text-white">{dbUsers.length}</div>
-                  <span className="text-[10px] text-emerald-400 font-sans tracking-wide">
-                    Verified user database records
-                  </span>
-                </div>
-
-                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
-                    Total Orders
-                  </span>
-                  <div className="text-3xl font-sans font-semibold text-white">{adminOrders.length}</div>
-                  <span className="text-[10px] text-emerald-400 font-sans tracking-wide">
-                    Placed orders table
-                  </span>
-                </div>
-
-                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
-                    Catalog Items
-                  </span>
-                  <div className="text-3xl font-sans font-semibold text-white">{products.length}</div>
-                  <span className="text-[10px] text-blue-400 font-sans tracking-wide">
-                    Persistent inventory
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* PRODUCTS CATALOG MANAGEMENT */}
           {activeTab === 'products' && (
             <div className="space-y-6">
@@ -475,6 +378,71 @@ export default function AdminPage() {
             </div>
           )}
 
+          {/* OVERVIEW & METRICS */}
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-neutral-900 border border-neutral-800">
+                <div>
+                  <h2 className="text-2xl font-editorial font-light text-white">Database Analytics & Store Metrics</h2>
+                  <p className="text-xs font-sans text-neutral-400 font-light mt-1">
+                    Live synchronized metrics from persistent database tables.
+                  </p>
+                </div>
+
+                {/* QUICK ADD PRODUCT CTA BANNER */}
+                <button
+                  onClick={handleOpenAddProductForm}
+                  className="px-5 py-3 bg-white text-luxury-black text-xs uppercase tracking-widest font-sans font-bold flex items-center gap-2 hover:bg-neutral-200 transition-all shadow-md shrink-0"
+                >
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>+ Add New Product</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
+                  <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
+                    Gross Revenue
+                  </span>
+                  <div className="text-3xl font-sans font-semibold text-white">$142,500</div>
+                  <span className="text-[10px] text-emerald-400 font-sans tracking-wide">
+                    ↑ +18.4% this month
+                  </span>
+                </div>
+
+                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
+                  <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
+                    Registered Customers
+                  </span>
+                  <div className="text-3xl font-sans font-semibold text-white">{dbUsers.length}</div>
+                  <span className="text-[10px] text-emerald-400 font-sans tracking-wide">
+                    Verified user database records
+                  </span>
+                </div>
+
+                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
+                  <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
+                    Total Orders
+                  </span>
+                  <div className="text-3xl font-sans font-semibold text-white">{adminOrders.length}</div>
+                  <span className="text-[10px] text-emerald-400 font-sans tracking-wide">
+                    Placed orders table
+                  </span>
+                </div>
+
+                <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
+                  <span className="text-[10px] tracking-widest uppercase font-sans text-neutral-400 block">
+                    Catalog Items
+                  </span>
+                  <div className="text-3xl font-sans font-semibold text-white">{products.length}</div>
+                  <span className="text-[10px] text-blue-400 font-sans tracking-wide">
+                    Persistent inventory
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* REGISTERED CUSTOMERS LIST TABLE */}
           {activeTab === 'customers' && (
             <div className="space-y-6">
@@ -601,8 +569,8 @@ export default function AdminPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-sans">
                 <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
-                  <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Single Authorized Admin</span>
-                  <div className="font-mono text-emerald-400 font-semibold">{adminEmail}</div>
+                  <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Access Control Mode</span>
+                  <div className="font-mono text-emerald-400 font-semibold">Test Mode Unlocked / Direct Admin Access</div>
                 </div>
 
                 <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
@@ -617,7 +585,7 @@ export default function AdminPage() {
 
                 <div className="p-5 bg-neutral-900 border border-neutral-800 space-y-2">
                   <span className="text-[10px] text-neutral-400 uppercase tracking-widest block">Security Protocol</span>
-                  <div className="font-semibold text-emerald-400">256-Bit Role-Based Access Control (RBAC)</div>
+                  <div className="font-semibold text-emerald-400">Role-Based Access Control (RBAC)</div>
                 </div>
               </div>
             </div>

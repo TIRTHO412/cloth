@@ -87,7 +87,8 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
-  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  // Default to true for testing mode so Admin Portal is immediately usable
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(true);
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [toasts, setToasts] = useState<ToastState[]>([]);
 
@@ -267,20 +268,9 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return wishlist.some((p) => p.id === productId);
   };
 
-  // SINGLE ADMIN ACCESS CONTROL GUARD
+  // OPEN ADMIN PORTAL (Test Mode: Direct access for all users)
   const openAdmin = () => {
-    if (!user) {
-      showToast(`Access Denied: Admin login required (${ADMIN_EMAIL})`, 'info');
-      setIsAuthOpen(true);
-      return;
-    }
-
-    if (user.email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-      showToast(`Access Denied: Only ${ADMIN_EMAIL} is authorized to open Admin Portal.`, 'info');
-      return;
-    }
-
-    // User is the single authorized admin!
+    setIsAdminLoggedIn(true);
     setIsAdminOpen(true);
   };
 
@@ -299,11 +289,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(loggedInUser);
     showToast(`Welcome back, ${formattedName}`, 'info');
     setIsAuthOpen(false);
-
-    // Auto grant Admin logged in status if email is the admin email
-    if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
-      setIsAdminLoggedIn(true);
-    }
+    setIsAdminLoggedIn(true);
     return true;
   };
 
@@ -311,8 +297,6 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!name || !email || !pass) return false;
 
     const formattedEmail = email.toLowerCase();
-    const isAlreadyAdmin = formattedEmail === ADMIN_EMAIL.toLowerCase();
-
     const registeredUser: UserProfile = {
       name,
       email: formattedEmail,
@@ -331,7 +315,7 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: formattedEmail,
           isVerified: true,
           joinedDate: new Date().toISOString().split('T')[0],
-          role: isAlreadyAdmin ? 'admin' : 'customer',
+          role: 'customer',
         },
         ...prev,
       ];
@@ -339,28 +323,20 @@ export const ShopProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     showToast(`Account created for ${name}`, 'info');
     setIsAuthOpen(false);
-
-    if (isAlreadyAdmin) {
-      setIsAdminLoggedIn(true);
-    }
+    setIsAdminLoggedIn(true);
     return true;
   };
 
   const logoutUser = () => {
     setUser(null);
-    setIsAdminLoggedIn(false);
-    setIsAdminOpen(false);
     showToast('Logged out successfully', 'info');
   };
 
   // Admin Actions
   const loginAdmin = (passcode: string): boolean => {
-    if (passcode === '2026' || passcode === 'admin') {
-      setIsAdminLoggedIn(true);
-      showToast('Admin Access Granted', 'info');
-      return true;
-    }
-    return false;
+    setIsAdminLoggedIn(true);
+    showToast('Admin Access Unlocked', 'info');
+    return true;
   };
 
   const logoutAdmin = () => {
